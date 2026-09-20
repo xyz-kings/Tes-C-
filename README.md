@@ -1,7 +1,5 @@
 # XYZ Email Verifier
 
-Struktur:
-
 ```text
 xyz-email-verifier/
 ├── api/
@@ -12,60 +10,44 @@ xyz-email-verifier/
 └── README.md
 ```
 
-## Lokal - Vercel API
+## Vercel
 
-Install Vercel CLI:
-
-```bash
-npm install -g vercel
-```
-
-Jalankan:
-
-```bash
-npm install
-vercel dev
-```
-
-Endpoint:
-
-```text
-http://localhost:3000/api
-```
-
-Kirim email:
-
-```text
-http://localhost:3000/api?action=send&email=user@example.com
-```
-
-Verifikasi:
-
-```text
-http://localhost:3000/api?action=verif&email=user@example.com&link=https%3A%2F%2Fexample.com%2Fverify&orderid=XVoid-123
-```
-
-## Deploy
+Deploy langsung:
 
 ```bash
 vercel --prod
 ```
 
-Jika ingin menyimpan API key sebagai environment variable:
+Tidak perlu `build` dan tidak perlu runtime manual.
 
-```bash
-vercel env add XVOID_API_KEY
-```
-
-Isi:
+Setelah deploy:
 
 ```text
-XVoid-ashar
+GET /
+```
+
+Root akan menampilkan 404 bawaan Vercel karena Function berada di `/api`.
+Gunakan:
+
+```text
+GET /api
+```
+
+Contoh send:
+
+```text
+/api?action=send&email=user@example.com
+```
+
+Contoh verifikasi:
+
+```text
+/api?action=verif&email=user@example.com&link=https%3A%2F%2Fexample.com%2Fverify&orderid=XVoid-123
 ```
 
 ## C++ lokal
 
-Linux/Termux:
+Termux:
 
 ```bash
 pkg install clang curl
@@ -81,16 +63,28 @@ g++ main.cpp -o xyz-email-verifier -lcurl
 ./xyz-email-verifier
 ```
 
-C++ lokal langsung menggunakan:
+C++ langsung menggunakan API:
 
 ```text
 https://api-am-six.vercel.app
 ```
 
-Flow:
+## API Key
 
-1. Input email
-2. Request `/api-send`
-3. Input order ID
-4. Input link verifikasi
-5. Request `/api-verif`
+Default:
+
+```text
+XVoid-ashar
+```
+
+Untuk Vercel bisa dibuat environment variable:
+
+```bash
+vercel env add XVOID_API_KEY
+```
+
+lalu isi:
+
+```text
+XVoid-ashar
+```
