@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -36,16 +37,32 @@
       color:#fff;background:#0d0d0d;border:1px solid #292929;
       border-radius:13px;outline:none;font-size:14px;
     }
-    input:focus{border-color:#777;box-shadow:0 0 0 3px rgba(255,255,255,.05)}
-    .buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:3px}
+    input:focus{
+      border-color:#777;
+      box-shadow:0 0 0 3px rgba(255,255,255,.05)
+    }
+    .buttons{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:3px
+    }
     button{
       height:50px;border:0;border-radius:13px;cursor:pointer;
       color:#050505;background:#fff;font-weight:700;font-size:14px;
       transition:.18s transform,.18s opacity;
     }
-    button.secondary{color:#fff;background:#222;border:1px solid #333}
+    button.secondary{
+      color:#fff;
+      background:#222;
+      border:1px solid #333
+    }
     button:hover{transform:translateY(-1px)}
-    button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    button:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      transform:none
+    }
     .status{
       margin-top:18px;padding:14px;border-radius:13px;
       border:1px solid #242424;background:#0b0b0b;
@@ -54,32 +71,61 @@
       color:#bbb;display:none;max-height:260px;overflow:auto;
     }
     .status.show{display:block}
-    .hint{margin-top:15px;color:#666;font-size:11px;text-align:center}
+    .hint{
+      margin-top:15px;
+      color:#666;
+      font-size:11px;
+      text-align:center
+    }
     @media(max-width:480px){
-      body{padding:14px}.card{padding:21px}.buttons{grid-template-columns:1fr}
+      body{padding:14px}
+      .card{padding:21px}
+      .buttons{grid-template-columns:1fr}
       h1{font-size:26px}
     }
   </style>
 </head>
+
 <body>
   <main class="card">
     <span class="badge">XYZ EMAIL VERIFIER · v1.0.1</span>
-    <h1>Email Verification</h1>
-    <p class="sub">Kirim email verifikasi lalu masukkan link dan order ID untuk proses verifikasi.</p>
 
-    <label for="email">Email</label>
-    <input id="email" type="email" placeholder="user@example.com" autocomplete="email">
+<h1>Email Verification</h1>
 
-    <label for="link">Link Verifikasi</label>
-    <input id="link" type="url" placeholder="https://example.com/verify">
+<p class="sub">
+  Kirim email verifikasi lalu masukkan link untuk proses verifikasi.
+</p>
 
-    <div class="buttons">
-      <button id="sendBtn" onclick="sendEmail()">Send Email</button>
-      <button id="verifyBtn" class="secondary" onclick="verifyLink()">Verify Link</button>
-    </div>
+<label for="email">Email</label>
+<input
+  id="email"
+  type="email"
+  placeholder="user@example.com"
+  autocomplete="email"
+>
 
-    <div id="status" class="status"></div>
-    <div class="hint">Powered by XYZ API</div>
+<label for="link">Link Verifikasi</label>
+<input
+  id="link"
+  type="url"
+  placeholder="https://example.com/verify"
+>
+
+<div class="buttons">
+  <button id="sendBtn" onclick="sendEmail()">
+    Send Email
+  </button>
+
+  <button id="verifyBtn" class="secondary" onclick="verifyLink()">
+    Verify Link
+  </button>
+</div>
+
+<div id="status" class="status"></div>
+
+<div class="hint">
+  Powered by XYZ API
+</div>
   </main>
 
 <script>
@@ -87,22 +133,38 @@ const $ = id => document.getElementById(id);
 
 function showStatus(value) {
   const box = $("status");
+
   box.textContent = typeof value === "string"
     ? value
     : JSON.stringify(value, null, 2);
+
   box.classList.add("show");
 }
 
 async function callApi(params) {
   const query = new URLSearchParams(params);
+
   const response = await fetch("/api?" + query.toString());
+
   const text = await response.text();
 
   let data;
-  try { data = JSON.parse(text); }
-  catch { data = { status: response.ok, response: text }; }
 
-  if (!response.ok) throw new Error(JSON.stringify(data, null, 2));
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = {
+      status: response.ok,
+      response: text
+    };
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      JSON.stringify(data, null, 2)
+    );
+  }
+
   return data;
 }
 
@@ -115,14 +177,21 @@ async function sendEmail() {
   }
 
   const btn = $("sendBtn");
+
   btn.disabled = true;
   btn.textContent = "Sending...";
 
   try {
-    const data = await callApi({ action:"send", email });
+    const data = await callApi({
+      action: "send",
+      email
+    });
+
     showStatus(data);
+
   } catch (e) {
     showStatus("ERROR\n" + e.message);
+
   } finally {
     btn.disabled = false;
     btn.textContent = "Send Email";
@@ -132,32 +201,37 @@ async function sendEmail() {
 async function verifyLink() {
   const email = $("email").value.trim();
   const link = $("link").value.trim();
-  const orderid = $("orderid").value.trim();
 
-  if (!email || !link || !orderid) {
-    showStatus("Email, Link Verifikasi, dan Order ID wajib diisi.");
+  if (!email || !link) {
+    showStatus(
+      "Email dan Link Verifikasi wajib diisi."
+    );
     return;
   }
 
   const btn = $("verifyBtn");
+
   btn.disabled = true;
   btn.textContent = "Verifying...";
 
   try {
     const data = await callApi({
-      action:"verif",
+      action: "verif",
       email,
-      link,
-      orderid
+      link
     });
+
     showStatus(data);
+
   } catch (e) {
     showStatus("ERROR\n" + e.message);
+
   } finally {
     btn.disabled = false;
     btn.textContent = "Verify Link";
   }
 }
 </script>
+
 </body>
 </html>
