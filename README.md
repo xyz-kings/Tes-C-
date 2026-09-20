@@ -1,7 +1,11 @@
 # XYZ Email Verifier
 
+Vercel-ready project with a static web page and a serverless API.
+
+## Structure
+
 ```text
-xyz-email-verifier/
+Tes-C--main/
 ├── api/
 │   └── index.js
 ├── index.html
@@ -11,34 +15,31 @@ xyz-email-verifier/
 └── README.md
 ```
 
-## Web
+## Deploy Vercel
 
-Root domain langsung menampilkan form:
-
-- Email
-- Link Verifikasi
-- Order ID
-- Send Email
-- Verify Link
-
-Web memanggil `/api` milik project Vercel, kemudian `/api` meneruskan request ke:
-
-`https://api-am-six.vercel.app/`
-
-## Deploy
+From this folder:
 
 ```bash
+npm install
+vercel login
 vercel --prod
 ```
 
-Tidak perlu build command khusus.
+When Vercel asks whether to link an existing project, use a new project if the old project/deployment is the source of `DEPLOYMENT_NOT_FOUND`.
 
-## C++ lokal
+Optional environment variable:
 
-Termux:
-
-```bash
-pkg install clang curl
-clang++ main.cpp -o xyz-email-verifier -lcurl
-./xyz-email-verifier
+```text
+XVOID_API_KEY=XVoid-ashar
 ```
+
+## Endpoints
+
+```text
+GET /
+GET /api
+GET /api?action=send&email=EMAIL
+GET /api?action=verif&email=EMAIL&link=LINK&orderid=ORDER_ID
+```
+
+The serverless function proxies requests to `https://api-am-six.vercel.app`.

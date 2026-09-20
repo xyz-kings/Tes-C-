@@ -1,44 +1,60 @@
 const API_BASE = "https://api-am-six.vercel.app";
-const API_KEY = process.env.XVOID_API_KEY || "XVoid-ashar";
 
-function json(res, status, data) {
-  res.status(status).setHeader("Content-Type", "application/json");
-  return res.end(JSON.stringify(data, null, 2));
+function sendJson(res, status, data) {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  res.end(JSON.stringify(data, null, 2));
 }
 
-function apiUrl(path, params) {
-  const url = new URL(path, API_BASE);
+function getQuery(req) {
+  if (req.query && typeof req.query === "object") return req.query;
+  const url = new URL(req.url || "/", "http://localhost");
+  return Object.fromEntries(url.searchParams.entries());
+}
 
+function buildUrl(path, params) {
+  const url = new URL(path, API_BASE);
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== "") {
-      url.searchParams.set(key, value);
+      url.searchParams.set(key, String(value));
     }
   }
-
   return url.toString();
 }
 
 export default async function handler(req, res) {
   try {
-    const query = req.query || {};
+    if (req.method !== "GET") {
+      return sendJson(res, 405, {
+        status: false,
+        message: "Method Not Allowed",
+        allowed: ["GET"]
+      });
+    }
 
-    // GET /api
-    if (!query.action) {
-      return json(res, 200, {
+    const query = getQuery(req);
+    const action = String(query.action || "").trim().toLowerCase();
+
+    if (!action) {
+      return sendJson(res, 200, {
         status: true,
         message: "XYZ Email Verifier API is running",
-        version: "1.0.1",
+        version: "1.1.0",
         endpoints: {
-          send: "/api?action=send&email=",
-          verif: "/api?action=verif&email=&link=&orderid="
+          send: "/api?action=send&email=EMAIL",
+          verif: "/api?action=verif&email=EMAIL&link=LINK&orderid=ORDER_ID"
         }
       });
     }
 
-    const { action, email, link, orderid } = query;
+    const email = String(query.email || "").trim();
+    const link = String(query.link || "").trim();
+    const orderid = String(query.orderid || "").trim();
+    const apiKey = process.env.XVOID_API_KEY || "XVoid-ashar";
 
     if (!email) {
-      return json(res, 400, {
+      return sendJson(res, 400, {
         status: false,
         message: "Parameter email wajib diisi"
       });
@@ -47,60 +63,66 @@ export default async function handler(req, res) {
     let target;
 
     if (action === "send") {
-      target = apiUrl("/api-send", {
+      target = buildUrl("/api-send", {
         email,
-        key: API_KEY
+        key: apiKey
       });
     } else if (action === "verif") {
       if (!link) {
-        return json(res, 400, {
+        return sendJson(res, 400, {
           status: false,
           message: "Parameter link wajib diisi"
         });
       }
 
       if (!orderid) {
-        return json(res, 400, {
+        return sendJson(res, 400, {
           status: false,
           message: "Parameter orderid wajib diisi"
         });
       }
 
-      target = apiUrl("/api-verif", {
+      target = buildUrl("/api-verif", {
         email,
-        key: API_KEY,
+        key: apiKey,
         link,
         orderid
       });
     } else {
-      return json(res, 400, {
+      return sendJson(res, 400, {
         status: false,
         message: "Action tidak dikenal",
         available: ["send", "verif"]
       });
     }
 
-    const response = await fetch(target);
-    const text = await response.text();
+    const upstream = await fetch(target, {
+      method: "GET",
+      headers: {
+        "User-Agent": "XYZ-Email-Verifier/1.1.0"
+      }
+    });
 
+    const text = await upstream.text();
     let data;
 
     try {
       data = JSON.parse(text);
     } catch {
       data = {
-        status: response.ok,
+        status: upstream.ok,
         response: text
       };
     }
 
-    return json(res, response.status, data);
-
+    return sendJson(res, upstream.status, data);
   } catch (error) {
-    return json(res, 500, {
+    console.error("XYZ API ERROR:", error);
+
+    return sendJson(res, 500, {
       status: false,
       message: "Internal server error",
-      error: error.message
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 }
