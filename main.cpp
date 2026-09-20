@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <curl/curl.h>
-
 using namespace std;
 
 const string API_BASE = "https://api-am-six.vercel.app";
@@ -13,24 +12,18 @@ size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp) {
 }
 
 string encode(CURL* curl, const string& value) {
-    char* result = curl_easy_escape(curl, value.c_str(), (int)value.size());
-    if (!result) return "";
-
-    string encoded(result);
-    curl_free(result);
-
-    return encoded;
+    char* p = curl_easy_escape(curl, value.c_str(), (int)value.size());
+    if (!p) return "";
+    string result(p);
+    curl_free(p);
+    return result;
 }
 
 string getRequest(const string& url) {
     CURL* curl = curl_easy_init();
-
-    if (!curl) {
-        return R"({"status":false,"message":"CURL initialization failed"})";
-    }
+    if (!curl) return R"({"status":false,"message":"CURL initialization failed"})";
 
     string response;
-
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -38,27 +31,22 @@ string getRequest(const string& url) {
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
 
     CURLcode result = curl_easy_perform(curl);
-
-    if (result != CURLE_OK) {
+    if (result != CURLE_OK)
         response = string(R"({"status":false,"message":")") +
-                   curl_easy_strerror(result) + ""}";
-    }
+                   curl_easy_strerror(result) + "\"}";
 
     curl_easy_cleanup(curl);
-
     return response;
 }
 
 int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
+    string email, link, orderid;
+
     cout << "========================================\n";
     cout << "        XYZ EMAIL VERIFIER\n";
     cout << "========================================\n\n";
-
-    string email;
-    string orderid;
-    string link;
 
     cout << "Email : ";
     getline(cin, email);
@@ -70,18 +58,15 @@ int main() {
     }
 
     CURL* curl = curl_easy_init();
-
     if (!curl) {
         cout << "Gagal initialize CURL.\n";
         curl_global_cleanup();
         return 1;
     }
 
-    string sendUrl =
-        API_BASE +
-        "/api-send?email=" + encode(curl, email) +
-        "&key=" + encode(curl, API_KEY);
-
+    string sendUrl = API_BASE + "/api-send?email=" +
+                     encode(curl, email) + "&key=" +
+                     encode(curl, API_KEY);
     curl_easy_cleanup(curl);
 
     cout << "\n[+] Mengirim email...\n";
@@ -90,36 +75,27 @@ int main() {
     cout << "\nOrder ID : ";
     getline(cin, orderid);
 
-    if (orderid.empty()) {
-        cout << "Order ID tidak boleh kosong.\n";
-        curl_global_cleanup();
-        return 1;
-    }
-
     cout << "\nLink verifikasi : ";
     getline(cin, link);
 
-    if (link.empty()) {
-        cout << "Link verifikasi tidak boleh kosong.\n";
+    if (orderid.empty() || link.empty()) {
+        cout << "Order ID dan link verifikasi wajib diisi.\n";
         curl_global_cleanup();
         return 1;
     }
 
     curl = curl_easy_init();
-
     if (!curl) {
         cout << "Gagal initialize CURL.\n";
         curl_global_cleanup();
         return 1;
     }
 
-    string verifUrl =
-        API_BASE +
-        "/api-verif?email=" + encode(curl, email) +
-        "&key=" + encode(curl, API_KEY) +
-        "&link=" + encode(curl, link) +
-        "&orderid=" + encode(curl, orderid);
-
+    string verifUrl = API_BASE + "/api-verif?email=" +
+                      encode(curl, email) + "&key=" +
+                      encode(curl, API_KEY) + "&link=" +
+                      encode(curl, link) + "&orderid=" +
+                      encode(curl, orderid);
     curl_easy_cleanup(curl);
 
     cout << "\n[+] Memverifikasi link...\n";
