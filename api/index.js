@@ -9,17 +9,20 @@ function sendJson(res, status, data) {
 
 function getQuery(req) {
   if (req.query && typeof req.query === "object") return req.query;
+
   const url = new URL(req.url || "/", "http://localhost");
   return Object.fromEntries(url.searchParams.entries());
 }
 
 function buildUrl(path, params) {
   const url = new URL(path, API_BASE);
+
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== "") {
       url.searchParams.set(key, String(value));
     }
   }
+
   return url.toString();
 }
 
@@ -40,10 +43,16 @@ export default async function handler(req, res) {
       return sendJson(res, 200, {
         status: true,
         message: "XYZ Email Verifier API is running",
-        version: "1.1.0",
+        version: "1.1.1",
         endpoints: {
           send: "/api?action=send&email=EMAIL",
-          verif: "/api?action=verif&email=EMAIL&link=LINK&orderid=ORDER_ID"
+          verif: "/api?action=verif&email=EMAIL&link=LINK",
+          verif_with_orderid: "/api?action=verif&email=EMAIL&link=LINK&orderid=ORDER_ID"
+        },
+        parameters: {
+          email: "Wajib",
+          link: "Wajib untuk action verif",
+          orderid: "Opsional untuk action verif"
         }
       });
     }
@@ -67,6 +76,7 @@ export default async function handler(req, res) {
         email,
         key: apiKey
       });
+
     } else if (action === "verif") {
       if (!link) {
         return sendJson(res, 400, {
@@ -74,20 +84,13 @@ export default async function handler(req, res) {
           message: "Parameter link wajib diisi"
         });
       }
-
-      if (!orderid) {
-        return sendJson(res, 400, {
-          status: false,
-          message: "Parameter orderid wajib diisi"
-        });
-      }
-
       target = buildUrl("/api-verif", {
         email,
         key: apiKey,
         link,
         orderid
       });
+
     } else {
       return sendJson(res, 400, {
         status: false,
@@ -95,15 +98,15 @@ export default async function handler(req, res) {
         available: ["send", "verif"]
       });
     }
-
     const upstream = await fetch(target, {
       method: "GET",
       headers: {
-        "User-Agent": "XYZ-Email-Verifier/1.1.0"
+        "User-Agent": "XYZ-Email-Verifier/1.1.1"
       }
     });
 
     const text = await upstream.text();
+
     let data;
 
     try {
@@ -116,13 +119,16 @@ export default async function handler(req, res) {
     }
 
     return sendJson(res, upstream.status, data);
+
   } catch (error) {
     console.error("XYZ API ERROR:", error);
 
     return sendJson(res, 500, {
       status: false,
       message: "Internal server error",
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error
+        ? error.message
+        : String(error)
     });
   }
 }
