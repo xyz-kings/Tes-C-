@@ -30,7 +30,7 @@ When Vercel asks whether to link an existing project, use a new project if the o
 Optional environment variable:
 
 ```text
-XVOID_API_KEY=XVoid-ashar
+XVOID_API_KEY= MINTA SAMA DEVELOPER NYA YAKK 
 ```
 
 ## Endpoints
